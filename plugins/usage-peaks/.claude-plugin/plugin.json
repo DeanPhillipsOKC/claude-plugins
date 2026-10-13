@@ -1,6 +1,6 @@
 {
   "name": "usage-peaks",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Logs each 5-hour and weekly usage window's peak, shows the live 5-hour % in the status line, and graphs usage over time",
   "author": { "name": "Dean Phillips" },
   "license": "MIT",

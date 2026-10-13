@@ -6,7 +6,7 @@
 
 - **Status line:** shows `5h 23% · wk 19%`, updated after each response.
 - **`/usage-peaks [days]`:** lists every 5-hour window from the last 14 days (or however many days you pass) with its highest reading, plus how many windows reached 50%, 80% and 90%. Weekly windows are listed under them.
-- **`/usage-graph [days]`:** opens a pane with a bar graph of 5-hour usage over the last 2 days (up to 30), so the peaks and resets are easy to see. The top two rows (80% and up) are red.
+- **`/usage-graph [days]`:** prints a bar graph of 5-hour usage over the last 2 days (up to 30), so the peaks and resets are easy to see. In a terminal it also opens a live pane, with the top two rows (80% and up) in red. From the Claude phone app (Remote Control) it prints a narrow graph that fits the screen. Add `phone` to force that layout.
 
 ## How it works
 

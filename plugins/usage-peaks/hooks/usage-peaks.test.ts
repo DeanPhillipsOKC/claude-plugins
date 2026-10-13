@@ -72,3 +72,64 @@ test('chart rows fill from the bottom', () => {
   const rows = chartRows([100, 50, 0, null], 2)
   expect(rows).toEqual(['█   ', '██ ·'])
 })
+
+for (const surface of ['terminal', 'desktop'] as const) {
+  test(`graph pane draws with no readings on ${surface}`, async ($, on) => {
+    mock.clock(on, { now: Date.now() })
+    const ui = await $.ui.mount({
+      plugin: 'usage-peaks', surface, component: 'Pane', requestId: 'usage-graph',
+      props: { title: 'graph' } as never,
+      viewport: { columns: 100, rows: 30 },
+    })
+    const texts = await ui.findAll({ type: 'Text' })
+    expect(texts.map(t => t.text).join('\n')).toContain('No readings yet')
+  })
+}
+
+test('graph pane draws 14 days of readings', async ($, on) => {
+  const now = Date.now()
+  mock.clock(on, { now })
+  const store = new Map<string, unknown>([['samples', [
+    { t: now - 3 * 864e5, p: 45, r: now - 3 * 864e5 + 3 * 3600e3 },
+    { t: now - 3600e3, p: 11, r: now + 3600e3 },
+  ]]])
+  on('store.get', (_$, e) => ({ value: store.get(e.key) }))
+  on('store.set', (_$, e) => (store.set(e.key, e.value), { value: undefined }))
+  on('command.register', () => ({ value: undefined }) as never)
+  on('ui.open', () => ({ value: { isPlaced: true } }) as never)
+  const printed = await $.command.run({ command: 'usage-graph', args: '14', presentation: { isFullscreen: false, columns: 140 } } as never)
+  expect(printed.text).toContain('live view also open in a pane')
+  expect(printed.text).toContain('Highest in view: 45%')
+  const ui = await $.ui.mount({
+    plugin: 'usage-peaks', surface: 'terminal', component: 'Pane', requestId: 'usage-graph',
+    props: { title: 'graph' } as never, viewport: { columns: 140, rows: 40 },
+  })
+  const all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  expect(all).toContain('Highest in view: 45%')
+})
+
+test('usage-graph prints the graph when the pane is not placed', async ($, on) => {
+  const now = Date.now()
+  mock.clock(on, { now })
+  on('store.get', () => ({ value: [{ t: now - 3600e3, p: 42, r: now + 3600e3 }] }))
+  on('ui.open', () => ({ value: { isPlaced: false, reason: 'no surface places panes' } }) as never)
+  const out = await $.command.run({
+    command: 'usage-graph', args: '', presentation: { isFullscreen: false, columns: 100 },
+  } as never)
+  expect(out.text).toContain('pane not shown: no surface places panes')
+  expect(out.text).toContain('Highest in view: 42%')
+})
+
+test('usage-graph prints a narrow fenced graph for the phone app', async ($, on) => {
+  const now = Date.now()
+  mock.clock(on, { now })
+  on('store.get', () => ({ value: [{ t: now - 3600e3, p: 42, r: now + 3600e3 }] }))
+  on('ui.open', () => ({ value: { isPlaced: true } }) as never)
+  const out = await $.command.run({
+    command: 'usage-graph', args: '14', origin: { kind: 'bridge' }, presentation: { isFullscreen: false, columns: 140 },
+  } as never)
+  const lines = (out.text ?? '').split('\n')
+  expect(lines[1]).toBe('```')
+  expect(lines.at(-1)).toBe('```')
+  expect(Math.max(...lines.map(l => l.length))).toBeLessThanOrEqual(38)
+})

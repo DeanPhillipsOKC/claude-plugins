@@ -134,7 +134,8 @@ export const dayAxis = (days: number, now: number, width: number): string => {
   d.setHours(24, 0, 0, 0)
   for (; d.getTime() < now; d.setDate(d.getDate() + 1)) {
     const col = Math.floor((d.getTime() - start) / step)
-    const label = `|${DAYS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`
+    // Narrow graphs get the bare date so more days fit.
+    const label = width < 60 ? `|${d.getMonth() + 1}/${d.getDate()}` : `|${DAYS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`
     if (col + label.length > width || cells.slice(col, col + label.length + 1).some(c => c !== ' ')) {
       if (col < width && cells[col] === ' ') cells[col] = '|'
       continue
@@ -142,4 +143,20 @@ export const dayAxis = (days: number, now: number, width: number): string => {
     for (let k = 0; k < label.length; k++) cells[col + k] = label[k]!
   }
   return cells.join('')
+}
+
+// The whole graph as plain lines: header, chart, axis, day labels.
+export const graphLines = (samples: readonly Sample[], days: number, now: number, width: number, height = 10): string[] => {
+  const values = series(samples, days, now, width)
+  const seen = values.filter((v): v is number => v !== null)
+  const top = seen.length ? Math.max(...seen) : 0
+  // Each row's label is the percentage at its top edge.
+  const label = (i: number) =>
+    (i === 0 || i === height / 2 ? `${Math.round(((height - i) / height) * 100)}%` : '').padStart(5) + ' │'
+  return [
+    `Highest in view: ${top}%   now: ${samples.at(-1)?.p ?? '?'}%`,
+    ...chartRows(values, height).map((row, i) => label(i) + row),
+    '   0% └' + '─'.repeat(width),
+    '       ' + dayAxis(days, now, width),
+  ]
 }
