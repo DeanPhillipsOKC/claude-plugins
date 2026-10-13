@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "dean-plugins",
+  "description": "Small Claude Code plugins Dean Phillips built for his own workflow",
+  "owner": { "name": "Dean Phillips" },
+  "plugins": [
+    {
+      "name": "usage-peaks",
+      "description": "Live 5-hour plan usage in the status line, the peak of every 5-hour window, and a graph of usage over time",
+      "author": { "name": "Dean Phillips" },
+      "category": "productivity",
+      "source": "./plugins/usage-peaks"
+    }
+  ]
+}
